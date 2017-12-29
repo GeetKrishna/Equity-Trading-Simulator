@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	default-autowire="byType"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:jms="http://www.springframework.org/schema/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	 http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/context
+		 http://www.springframework.org/schema/context/spring-context-4.1.xsd
+		http://www.springframework.org/schema/aop
+		 http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		 http://www.springframework.org/schema/jms 
+                           http://www.springframework.org/schema/jms/spring-jms.xsd
+                           http://activemq.apache.org/schema/core 
+                           http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+
+	<!-- Below line of code lets program know that @Autowired annotation will be used to autowire properties -->
+	<context:annotation-config></context:annotation-config>
+	<context:component-scan base-package="com.bababroker.*"></context:component-scan>
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+	<context:property-placeholder location="classpath:application.properties"/>
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+	<bean id="dataSource" name="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	<property name="driverClassName" value="${driverClassName}"></property>
+	<property name="url" value="${url}"></property>
+	<property name="username" value="${username1}"></property>
+	<property name="password" value="${password}"></property>
+	</bean>
+	
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceXmlLocation" value="classpath:persistence.xml" />
+		<property name="persistenceUnitName" value="bababroker" />
+		<property name="dataSource" ref="dataSource" />
+		<property name="jpaVendorAdapter" ref="jpaVendorAdapter" />
+		<property name="jpaDialect" ref="jpaDialect" />
+	</bean>
+
+
+       <bean id="jpaVendorAdapter"
+              class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+              <property name="database" value="ORACLE" />
+              <property name="databasePlatform" value="org.hibernate.dialect.Oracle10gDialect" />
+       </bean>
+
+       <bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+
+       <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+              <property name="entityManagerFactory" ref="entityManagerFactory" />
+              <property name="dataSource" ref="dataSource" />
+              <property name="jpaDialect" ref="jpaDialect" />
+       </bean>
+       
+        <bean id="listenerContainer"
+              class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+              <property name="connectionFactory" ref="jndiQueueConnectionFactory"></property>
+              <property name="destinationName" value="BabaQueue"></property>
+              <property name="messageListener" ref="messageListener"></property>
+            <!--   <property name="destinationResolver" ref="destinationResolver"></property>
+ -->
+       </bean>
+
+
+ 
+
+       <bean id="jndiQueueConnectionFactory" class="org.springframework.jndi.JndiObjectFactoryBean">
+              <property name="jndiName" value="java:comp/env/jms/ConnectionFactory" />
+       </bean>
+
+       <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+              <property name="connectionFactory" ref="jndiQueueConnectionFactory"></property>
+              <property name="defaultDestinationName" value="SpadQueue"></property>
+       </bean>
+       
+       
+
+       <bean id="messageListener"
+              class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+              <property name="delegate" ref="receiver"></property>
+              <property name="defaultListenerMethod" value="receiveMessage"></property>
+       </bean>
+       
+       <bean id="receiver"
+              class="com.bababroker.services.Receiver">
+              
+       </bean>
+
+       <bean id="sender"
+              class="com.bababroker.services.Sender">
+              
+       </bean>
+<!--        	<bean id="productDao" name="productDao" class="sape.NicholasMaffattone_SpringHibernate.dao.ProductDao"></bean> -->
+<!--        	<bean id="productService" name="productService" class="sape.NicholasMaffattone_SpringHibernate.service.ProductService"> -->
+<!-- 	</bean> -->
+	
+</beans>
